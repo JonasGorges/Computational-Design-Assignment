@@ -3,3 +3,4 @@ import rhinoscriptsyntax as rs
 import random
 
 out = inA * inB
+print ("Hello World")
