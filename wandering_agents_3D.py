@@ -6,10 +6,16 @@ boundarySize = 10.0
 
 class ParticleSystem:
     
-    def __init__(self, particleCount):
+    def __init__(self, preyPopulation, predatorPopulation):
         self.Particles = []
-        for i in range(0, particleCount):
-            newParticle = Particle()
+        # populate with prey
+        for i in range(0, preyPopulation):
+            newParticle = Prey()
+            newParticle.ParticleSystem = self
+            self.Particles.append(newParticle)
+        # populate with predators
+        for i in range(0, predatorPopulation):
+            newParticle = Predator()
             newParticle.ParticleSystem = self
             self.Particles.append(newParticle)
     
@@ -20,7 +26,7 @@ class ParticleSystem:
         for particle in self.Particles:
             particle.Update()
 
-class Particle:
+class Prey(object):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
         # Initilize the Position to a random point
@@ -120,16 +126,81 @@ class Particle:
         elif self.Position.Z > boundarySize:
             self.Position.Z = boundarySize
             self.Velocity.Z = -self.Velocity.Z
+
+class Predator(object):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
+
+    def __init__(self):
+        # Initilize the Position to a random point
+        self.Position = rg.Point3d(random.uniform(0, boundarySize),\
+            random.uniform(0, boundarySize), random.uniform(0, boundarySize))
+        self.Maxspeed = 0.1
+        self.Maxforce = 0.2
+        
+        # Initilize the Velocity to a random 3D Vector of length 0.1
+        alpha = random.uniform(0, 6.28)
+        self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
+        
+        self.History = [self.Position]    
+    
+    def Calculate(self):        
+        self.Wander()
+        #self.Align()
+        #self.Separate()
+        self.Kill()
+        self.Containment()
+        
+    def Update(self):
+        self.Position += self.Velocity
+        self.History.append(self.Position)
+        
+        if len(self.History) > 30:
+            del self.History[0]   
+
+    def Wander(self):
+        self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
+        
+    def Kill(self):
+        neighborDistance = 0.5
+        survivors = []
+        for other in self.ParticleSystem.Particles:
+            if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_⩹)
+                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                if distance_to_neighbor > neighborDistance:
+                    survivors.append(other)
+            else:
+                survivors.append(other)
+        self.ParticleSystem.Particles = survivors
+
+    def Containment(self):
+        if self.Position.X < 0.0:
+            self.Position.X = 0
+            self.Velocity.X = -self.Velocity.X
+        elif self.Position.X > boundarySize:
+            self.Position.X = boundarySize
+            self.Velocity.X = -self.Velocity.X
             
+        if self.Position.Y < 0.0:
+            self.Position.Y = 0
+            self.Velocity.Y = -self.Velocity.Y
+        elif self.Position.Y > boundarySize:
+            self.Position.Y = boundarySize
+            self.Velocity.Y = -self.Velocity.Y
+            
+        if self.Position.Z < 0.0:
+            self.Position.Z = 0
+            self.Velocity.Z = -self.Velocity.Z
+        elif self.Position.Z > boundarySize:
+            self.Position.Z = boundarySize
+            self.Velocity.Z = -self.Velocity.Z             
+
 
 # Main Script:
-
 if iReset or not("myParticleSystem" in globals()):
-    particleCount = 200
-    myParticleSystem = ParticleSystem(particleCount)
+    preyCount = 100
+    predatorCount = 10
+    myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
-    
 # Output the visualization geometry
 paths = [] 
 for particle in myParticleSystem.Particles:
@@ -138,4 +209,3 @@ boundingBox = rg.Box(rg.Plane.WorldXY, rg.Interval(0.0, boundarySize),\
     rg.Interval(0.0, boundarySize), rg.Interval(0.0, boundarySize)).ToBrep()
 paths += [edge.EdgeCurve for edge in boundingBox.Edges]
 oGeometry = paths
-
