@@ -33,6 +33,7 @@ class Prey(object):  # inherits from object, so class type of instances can be c
         self.Position = rg.Point3d(random.uniform(0, boundarySize),\
             random.uniform(0, boundarySize), random.uniform(0, boundarySize))
         self.Maxspeed = 0.05
+        self.Flightspeed = 2 * self.Maxspeed
         self.Maxforce = 0.2
         
         # Initilize the Velocity to a random 3D Vector of length 0.1
@@ -43,8 +44,10 @@ class Prey(object):  # inherits from object, so class type of instances can be c
     
     def Calculate(self):        
         self.Wander()
+        self.School()
         self.Align()
         self.Separate()
+        self.Flight()
         self.Containment()
         
     def Update(self):
@@ -55,7 +58,7 @@ class Prey(object):  # inherits from object, so class type of instances can be c
             del self.History[0]
             
     def Align(self):
-        neighborDistance = 2.0
+        neighborDistance = 1
         sum = rg.Vector3d.Zero
         count = 0
         for other in self.ParticleSystem.Particles:
@@ -72,9 +75,54 @@ class Prey(object):  # inherits from object, so class type of instances can be c
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce
             self.Velocity += steer
-        
-    def Separate(self):
+
+    def Flight(self):
         desiredSeparation = 1.0
+        sum = rg.Vector3d.Zero
+        count = 0
+        for other in self.ParticleSystem.Particles:
+            if type(other).__name__ == 'Predator':
+                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                if distance_to_neighbor > 0 and distance_to_neighbor < desiredSeparation:
+                    away = self.Position - other.Position
+                    away.Unitize()
+                    away /= distance_to_neighbor
+                    sum += away
+                    count += 1
+        
+        if count > 0:
+            sum /= count
+            sum *= self.Flightspeed
+            steer = sum - self.Velocity
+            if steer.Length > self.Maxforce:
+                 steer *= self.Maxforce / steer.Length
+            self.Velocity += steer
+
+    def School(self):
+        schoolingDistance = 5.0
+        sum = rg.Vector3d.Zero
+        count = 0
+        for other in self.ParticleSystem.Particles:
+            if type(other).__name__ == type(self).__name__:
+                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                if distance_to_neighbor > 0 and distance_to_neighbor < schoolingDistance:
+                    towards = other.Position - self.Position 
+                    towards.Unitize()
+                    towards /= distance_to_neighbor
+                    sum += towards
+                    count += 1
+        
+        if count > 0:
+            sum /= count
+            sum.Unitize()
+            sum *= self.Maxspeed
+            steer = sum - self.Velocity
+            if steer.Length > self.Maxforce:
+                 steer *= self.Maxforce / steer.Length
+            self.Velocity += steer        
+
+    def Separate(self):
+        desiredSeparation = 0.15
         sum = rg.Vector3d.Zero
         count = 0
         for other in self.ParticleSystem.Particles:
@@ -92,9 +140,9 @@ class Prey(object):  # inherits from object, so class type of instances can be c
             sum *= self.Maxspeed
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
-                 steer *= self.Maxforce.Length / steer.Length
+                 steer *= self.Maxforce / steer.Length
             self.Velocity += steer
-        
+                    
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
     
@@ -133,7 +181,8 @@ class Predator(object):  # inherits from object, so class type of instances can 
         # Initilize the Position to a random point
         self.Position = rg.Point3d(random.uniform(0, boundarySize),\
             random.uniform(0, boundarySize), random.uniform(0, boundarySize))
-        self.Maxspeed = 0.1
+        self.Maxspeed = 0.025
+        self.Attackspeed = 4 * self.Maxspeed
         self.Maxforce = 0.2
         
         # Initilize the Velocity to a random 3D Vector of length 0.1
@@ -146,6 +195,7 @@ class Predator(object):  # inherits from object, so class type of instances can 
         self.Wander()
         #self.Align()
         #self.Separate()
+        self.Attack()
         self.Kill()
         self.Containment()
         
@@ -159,13 +209,42 @@ class Predator(object):  # inherits from object, so class type of instances can 
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
         
+    def Attack(self):
+        attackDistance = 1.5
+        sum = rg.Vector3d.Zero
+        count = 0
+        for other in self.ParticleSystem.Particles:
+            if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_
+                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                if distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
+                    towards = other.Position - self.Position
+                    towards.Unitize()
+                    towards /= distance_to_neighbor
+                    sum += towards
+                    count += 1
+        
+        if count > 0:
+            sum /= count
+            sum.Unitize()
+            sum *= self.Attackspeed
+            steer = sum - self.Velocity
+            if steer.Length > self.Maxforce:
+                 steer *= self.Maxforce / steer.Length
+            self.Velocity += steer
+        else:
+            self.Velocity.Unitize()
+            self.Velocity *= self.Maxspeed
+        
     def Kill(self):
         neighborDistance = 0.5
+        killProbability = 0.25
         survivors = []
         for other in self.ParticleSystem.Particles:
             if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_⩹)
                 distance_to_neighbor = self.Position.DistanceTo(other.Position)
-                if distance_to_neighbor > neighborDistance:
+                if distance_to_neighbor < neighborDistance and killProbability > random.uniform(0.0, 1.0):
+                    pass
+                else:
                     survivors.append(other)
             else:
                 survivors.append(other)
@@ -197,7 +276,7 @@ class Predator(object):  # inherits from object, so class type of instances can 
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 100
-    predatorCount = 10
+    predatorCount = 5
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
