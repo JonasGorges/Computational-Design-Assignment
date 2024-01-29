@@ -2,7 +2,7 @@
 import random
 import math
 
-boundarySize = 10.0
+boundarySize = 20.0
 
 class ParticleSystem:
     
