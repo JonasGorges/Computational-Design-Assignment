@@ -30,10 +30,7 @@ class ParticleSystem:
             for j in range(len(distances), len(self.Particles)):  # only look at upper triangle
                 distanceList.append(particle.Position.DistanceTo(self.Particles[j].Position))
             particle.Distances = distanceList
-            print(distanceList)  # for debugging
-            distances.append(distanceList)  
-        
-        for particle in self.Particles:
+            distances.append(distanceList) 
             particle.Calculate()
             
         for particle in self.Particles:
@@ -205,16 +202,22 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
         self.Maxforce = 0.2
         alpha = random.uniform(0, 6.28)
         self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
-
     
     def Calculate(self):        
         self.Wander()
         #self.Align()
         #self.Separate()
         self.Attack()
-        self.Kill()
         self.Containment()
+
+    def Update(self):
+        self.Kill() # makes sure that agents are only removed after all calculations finished
         
+        self.Position += self.Velocity
+        self.History.append(self.Position)
+        
+        if len(self.History) > 30:
+            del self.History[0]  
 
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
@@ -262,8 +265,8 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
        
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 6
-    predatorCount = 0
+    preyCount = 100
+    predatorCount = 1
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
