@@ -26,22 +26,57 @@ class ParticleSystem:
         for particle in self.Particles:
             particle.Update()
 
-class Prey(object):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
+class Fish(object):
+    def __init__(self):
+        self.Position = rg.Point3d(random.uniform(0, boundarySize),\
+                    random.uniform(0, boundarySize), random.uniform(0, boundarySize))
+        self.Maxspeed = 0
+        self.Maxforce = 0
+        self.Velocity = rg.Vector3d(0,0,0)
+        self.History = [self.Position]
+    
+    def Calculate(self):
+        pass
+    
+    def Update(self):
+        self.Position += self.Velocity
+        self.History.append(self.Position)
+        
+        if len(self.History) > 30:
+            del self.History[0]
+            
+    def Containment(self):
+        if self.Position.X < 0.0:
+            self.Position.X = 0
+            self.Velocity.X = -self.Velocity.X
+        elif self.Position.X > boundarySize:
+            self.Position.X = boundarySize
+            self.Velocity.X = -self.Velocity.X
+            
+        if self.Position.Y < 0.0:
+            self.Position.Y = 0
+            self.Velocity.Y = -self.Velocity.Y
+        elif self.Position.Y > boundarySize:
+            self.Position.Y = boundarySize
+            self.Velocity.Y = -self.Velocity.Y
+            
+        if self.Position.Z < 0.0:
+            self.Position.Z = 0
+            self.Velocity.Z = -self.Velocity.Z
+        elif self.Position.Z > boundarySize:
+            self.Position.Z = boundarySize
+            self.Velocity.Z = -self.Velocity.Z
+             
+class Prey(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-        # Initilize the Position to a random point
-        self.Position = rg.Point3d(random.uniform(0, boundarySize),\
-            random.uniform(0, boundarySize), random.uniform(0, boundarySize))
-        self.Maxspeed = 0.05
-        self.Flightspeed = 2 * self.Maxspeed
-        self.Maxforce = 0.2
-        
-        # Initilize the Velocity to a random 3D Vector of length 0.1
-        alpha = random.uniform(0, 6.28)
-        self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
-        
-        self.History = [self.Position]    
-    
+            super(Prey, self).__init__()
+            self.Maxspeed = 0.05
+            self.Flightspeed = 2 * self.Maxspeed
+            self.Maxforce = 0.2
+            alpha = random.uniform(0, 6.28)
+            self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
+ 
     def Calculate(self):        
         self.Wander()
         self.School()
@@ -50,12 +85,6 @@ class Prey(object):  # inherits from object, so class type of instances can be c
         self.Flight()
         self.Containment()
         
-    def Update(self):
-        self.Position += self.Velocity
-        self.History.append(self.Position)
-        
-        if len(self.History) > 30:
-            del self.History[0]
             
     def Align(self):
         neighborDistance = 1
@@ -152,44 +181,17 @@ class Prey(object):  # inherits from object, so class type of instances can be c
     #     toAttractor *= 0.01 / toAttractor.Length
     #     self.Velocity += toAttractor
     #     self.Velocity *= 0.1 / self.Velocity.Length
-        
-    def Containment(self):
-        if self.Position.X < 0.0:
-            self.Position.X = 0
-            self.Velocity.X = -self.Velocity.X
-        elif self.Position.X > boundarySize:
-            self.Position.X = boundarySize
-            self.Velocity.X = -self.Velocity.X
-            
-        if self.Position.Y < 0.0:
-            self.Position.Y = 0
-            self.Velocity.Y = -self.Velocity.Y
-        elif self.Position.Y > boundarySize:
-            self.Position.Y = boundarySize
-            self.Velocity.Y = -self.Velocity.Y
-            
-        if self.Position.Z < 0.0:
-            self.Position.Z = 0
-            self.Velocity.Z = -self.Velocity.Z
-        elif self.Position.Z > boundarySize:
-            self.Position.Z = boundarySize
-            self.Velocity.Z = -self.Velocity.Z
-
-class Predator(object):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
+    
+class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-        # Initilize the Position to a random point
-        self.Position = rg.Point3d(random.uniform(0, boundarySize),\
-            random.uniform(0, boundarySize), random.uniform(0, boundarySize))
+        super(Predator, self).__init__()
         self.Maxspeed = 0.025
         self.Attackspeed = 4 * self.Maxspeed
         self.Maxforce = 0.2
-        
-        # Initilize the Velocity to a random 3D Vector of length 0.1
         alpha = random.uniform(0, 6.28)
         self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
-        
-        self.History = [self.Position]    
+
     
     def Calculate(self):        
         self.Wander()
@@ -199,12 +201,6 @@ class Predator(object):  # inherits from object, so class type of instances can 
         self.Kill()
         self.Containment()
         
-    def Update(self):
-        self.Position += self.Velocity
-        self.History.append(self.Position)
-        
-        if len(self.History) > 30:
-            del self.History[0]   
 
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
@@ -249,34 +245,11 @@ class Predator(object):  # inherits from object, so class type of instances can 
             else:
                 survivors.append(other)
         self.ParticleSystem.Particles = survivors
-
-    def Containment(self):
-        if self.Position.X < 0.0:
-            self.Position.X = 0
-            self.Velocity.X = -self.Velocity.X
-        elif self.Position.X > boundarySize:
-            self.Position.X = boundarySize
-            self.Velocity.X = -self.Velocity.X
-            
-        if self.Position.Y < 0.0:
-            self.Position.Y = 0
-            self.Velocity.Y = -self.Velocity.Y
-        elif self.Position.Y > boundarySize:
-            self.Position.Y = boundarySize
-            self.Velocity.Y = -self.Velocity.Y
-            
-        if self.Position.Z < 0.0:
-            self.Position.Z = 0
-            self.Velocity.Z = -self.Velocity.Z
-        elif self.Position.Z > boundarySize:
-            self.Position.Z = boundarySize
-            self.Velocity.Z = -self.Velocity.Z             
-
-
+       
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 100
-    predatorCount = 5
+    predatorCount = 0
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
