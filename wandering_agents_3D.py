@@ -30,10 +30,10 @@ class Fish(object):
     def __init__(self):
         self.Position = rg.Point3d(random.uniform(0, boundarySize),\
                     random.uniform(0, boundarySize), random.uniform(0, boundarySize))
-                self.Maxspeed = 0
-                self.Maxforce = 0
-                self.Velocity = rg.Vector3d(0,0,0)
-                self.History = [self.Position]
+        self.Maxspeed = 0
+        self.Maxforce = 0
+        self.Velocity = rg.Vector3d(0,0,0)
+        self.History = [self.Position]
     
     def Calculate(self):
         pass
@@ -184,7 +184,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
     
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
-   def __init__(self):
+    def __init__(self):
         super(Predator, self).__init__()
         self.Maxspeed = 0.025
         self.Attackspeed = 4 * self.Maxspeed
@@ -249,7 +249,7 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 100
-    predatorCount = 5
+    predatorCount = 0
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
