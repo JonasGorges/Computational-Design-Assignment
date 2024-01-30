@@ -20,6 +20,19 @@ class ParticleSystem:
             self.Particles.append(newParticle)
     
     def Update(self):
+        
+        distances = []  # matrix of all distances
+        for particle in self.Particles:
+            distanceList = []
+            if len(distances) > 0:
+                for d in distances:  # fill up lower triangle of matrix
+                    distanceList.append(d[len(distances)])
+            for j in range(len(distances), len(self.Particles)):  # only look at upper triangle
+                distanceList.append(particle.Position.DistanceTo(self.Particles[j].Position))
+            particle.Distances = distanceList
+            print(distanceList)  # for debugging
+            distances.append(distanceList)  
+        
         for particle in self.Particles:
             particle.Calculate()
             
@@ -30,6 +43,7 @@ class Fish(object):
     def __init__(self):
         self.Position = rg.Point3d(random.uniform(0, boundarySize),\
                     random.uniform(0, boundarySize), random.uniform(0, boundarySize))
+        self.Distances = []
         self.Maxspeed = 0
         self.Maxforce = 0
         self.Velocity = rg.Vector3d(0,0,0)
@@ -90,8 +104,8 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
         neighborDistance = 1
         sum = rg.Vector3d.Zero
         count = 0
-        for other in self.ParticleSystem.Particles:
-            distance_to_neighbor = self.Position.DistanceTo(other.Position)
+        for i, other in enumerate(self.ParticleSystem.Particles):
+            distance_to_neighbor = self.Distances[i]  # new implementation of diagonally checked distances
             if distance_to_neighbor > 0 and distance_to_neighbor < neighborDistance:
                 sum += other.Velocity
                 count += 1
@@ -248,8 +262,8 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
        
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 100
-    predatorCount = 5
+    preyCount = 6
+    predatorCount = 0
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
