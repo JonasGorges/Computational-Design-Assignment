@@ -255,9 +255,14 @@ else:
     myParticleSystem.Update()
 # Output the visualization geometry
 paths = [] 
+paths2 = []
 for particle in myParticleSystem.Particles:
-    paths.append(rg.PolylineCurve(particle.History))
+    if 'Prey' in str(type(particle)):
+        paths.append(rg.PolylineCurve(particle.History))
+    else:
+        paths2.append(rg.PolylineCurve(particle.History))
 boundingBox = rg.Box(rg.Plane.WorldXY, rg.Interval(0.0, boundarySize),\
     rg.Interval(0.0, boundarySize), rg.Interval(0.0, boundarySize)).ToBrep()
 paths += [edge.EdgeCurve for edge in boundingBox.Edges]
 oGeometry = paths
+oGeometry2 = paths2
