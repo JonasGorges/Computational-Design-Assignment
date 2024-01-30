@@ -249,7 +249,7 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 100
-    predatorCount = 0
+    predatorCount = 5
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
