@@ -2,8 +2,8 @@
 import random
 import math
 
-boundarySize = 10.0
 
+# Particle Class to populate with Agents
 class ParticleSystem:
     
     def __init__(self, preyPopulation, predatorPopulation):
@@ -18,9 +18,9 @@ class ParticleSystem:
             newParticle = Predator()
             newParticle.ParticleSystem = self
             self.Particles.append(newParticle)
-    
-    def Update(self):
-        
+ 
+ # Update Agent System simultaneously    
+    def Update(self):        
         distances = []  # matrix of all distances
         for particle in self.Particles:
             distanceList = []
@@ -36,7 +36,9 @@ class ParticleSystem:
         for particle in self.Particles:
             particle.Update()
 
+# Parent Class to inherit Attributes and Methods all Fishes have in common
 class Fish(object):
+    
     def __init__(self):
         self.Position = rg.Point3d(random.uniform(0, boundarySize),\
                     random.uniform(0, boundarySize), random.uniform(0, boundarySize))
@@ -81,7 +83,7 @@ class Fish(object):
 class Prey(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-            super(Prey, self).__init__()
+            super(Prey, self).__init__() # super to be able to overwrite parent
             self.Maxspeed = 0.05
             self.Flightspeed = 2 * self.Maxspeed
             self.Maxforce = 0.2
@@ -120,8 +122,10 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
         desiredSeparation = 1.0
         sum = rg.Vector3d.Zero
         count = 0
+        minSchoolSize = 20
+        
         for other in self.ParticleSystem.Particles:
-            if type(other).__name__ == 'Predator':
+            if type(other).__name__ == 'Predator': #and amount of particles of fish < minSchoolSize !!
                 distance_to_neighbor = self.Position.DistanceTo(other.Position)
                 if distance_to_neighbor > 0 and distance_to_neighbor < desiredSeparation:
                     away = self.Position - other.Position
@@ -136,7 +140,19 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce / steer.Length
-            self.Velocity += steer
+            self.Velocity += 
+        
+        # after flight check if Predator is out of range
+        # then increase the schooling distance for a few steps
+
+    # to adjust the flight behavior according to the amount of fish nearby
+    # check how many 'Prey' nearby
+    # if amount is bigger than 20
+    # start cycling around the predator        
+    def Encircle(self):
+        
+        minSchoolSize = 20
+        
 
     def School(self):
         schoolingDistance = 5.0
@@ -160,6 +176,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce / steer.Length
             self.Velocity += steer        
+
 
     def Separate(self):
         desiredSeparation = 0.15
@@ -196,7 +213,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-        super(Predator, self).__init__()
+        super(Predator, self).__init__() # super to be able to overwrite parent
         self.Maxspeed = 0.025
         self.Attackspeed = 4 * self.Maxspeed
         self.Maxforce = 0.2
@@ -262,24 +279,32 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
             else:
                 survivors.append(other)
         self.ParticleSystem.Particles = survivors
+ 
+
+# -------------------------------------------------------------------------------------------------------------------------
        
-# Main Script:
+# MAIN SCRIPT:
+
+# set size of boundary box
+boundarySize = 10.0
+
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 100
     predatorCount = 1
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
+    
 # Output the visualization geometry
-paths = [] 
-paths2 = []
+paths_Prey = [] 
+paths_Predator = []
 for particle in myParticleSystem.Particles:
     if 'Prey' in str(type(particle)):
-        paths.append(rg.PolylineCurve(particle.History))
+        paths_Prey.append(rg.PolylineCurve(particle.History))
     else:
-        paths2.append(rg.PolylineCurve(particle.History))
+        paths_Predator.append(rg.PolylineCurve(particle.History))
 boundingBox = rg.Box(rg.Plane.WorldXY, rg.Interval(0.0, boundarySize),\
     rg.Interval(0.0, boundarySize), rg.Interval(0.0, boundarySize)).ToBrep()
 paths += [edge.EdgeCurve for edge in boundingBox.Edges]
-oGeometry = paths
-oGeometry2 = paths2
+oGeometry = paths_Prey
+oGeometry2 = paths_Predator
