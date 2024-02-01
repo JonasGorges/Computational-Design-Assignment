@@ -95,8 +95,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
         self.Separate()
         self.Flight()
         self.Containment()
-        
-            
+                 
     def Align(self):
         neighborDistance = 1
         sum = rg.Vector3d.Zero
@@ -265,7 +264,7 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
        
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 100
+    preyCount = 200
     predatorCount = 1
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
