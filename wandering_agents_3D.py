@@ -302,6 +302,7 @@ for particle in myParticleSystem.Particles:
         paths_Predator.append(rg.PolylineCurve(particle.History))
 boundingBox = rg.Box(rg.Plane.WorldXY, rg.Interval(0.0, boundarySize),\
     rg.Interval(0.0, boundarySize), rg.Interval(0.0, boundarySize)).ToBrep()
-paths += [edge.EdgeCurve for edge in boundingBox.Edges]
-oGeometry = paths_Prey
-oGeometry2 = paths_Predator
+#paths += [edge.EdgeCurve for edge in boundingBox.Edges]
+oPreyPath = paths_Prey
+oPredatorPath = paths_Predator
+oBoundaryBox = [edge.EdgeCurve for edge in boundingBox.Edges]
