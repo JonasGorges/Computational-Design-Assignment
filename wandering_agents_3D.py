@@ -45,15 +45,19 @@ class Fish(object):
         self.Distances = []
         self.Maxspeed = 0
         self.Maxforce = 0
-        self.Velocity = rg.Vector3d(0,0,0)
+        self.Velocity = rg.Vector3d.Zero
+        self.Accelleration = rg.Vector3d.Zero
         self.History = [self.Position]
     
     def Calculate(self):
         pass
     
     def Update(self):
+        self.Velocity += self.Accelleration
         self.Position += self.Velocity
         self.History.append(self.Position)
+        
+        self.Accelleration *= 0
         
         if len(self.History) > 30:
             del self.History[0]
@@ -83,19 +87,36 @@ class Fish(object):
 class Prey(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-            super(Prey, self).__init__() # super to be able to overwrite parent
+            super(Prey, self).__init__()
+            # set limits for movement
             self.Maxspeed = 0.05
             self.Flightspeed = 2 * self.Maxspeed
             self.Maxforce = 0.2
+            
+            # set weights of behaviors
+            self.wWander = 3.0
+            self.wSchool = 1.0
+            self.wAlign = 1.0
+            self.wSeperate = 2.0
+            self.wFlight = 1.0
+            #self.wContain = 1.0
+            
+            # initialize velocity
             alpha = random.uniform(0, 6.28)
             self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
  
     def Calculate(self):        
-        self.Wander()
-        self.School()
-        self.Align()
-        self.Separate()
-        self.Flight()
+        aWander = self.Wander()
+        aSchool = self.School()
+        aAlign = self.Align()
+        aSeperate = self.Separate()
+        aFlight = self.Flight()
+        aContain = self.Containment()
+    
+        self.Accelleration = (self.wWander * aWander + self.wSchool * aSchool + self.wAlign * aAlign + \
+            self.wSeperate * aSeperate + self.wFlight * aFlight) / (self.wWander + self.wSchool + \
+            self.wAlign + self.wSeperate + self.wFlight)
+            
         self.Containment()
                  
     def Align(self):
@@ -108,14 +129,15 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                 sum += other.Velocity
                 count += 1
         
+        steer = rg.Vector3d.Zero
         if count > 0:
             sum /= count
             sum.Unitize()
             sum *= self.Maxspeed
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
-                 steer *= self.Maxforce
-            self.Velocity += steer
+                 steer *= self.Maxforce/steer.Length
+        return steer
 
     def Flight(self):
         desiredSeparation = 1.0
@@ -131,6 +153,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                     sum += away
                     count += 1
         
+        steer = rg.Vector3d.Zero
         if count > 0:
             sum /= count
             sum *= self.Flightspeed
@@ -138,21 +161,22 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce / steer.Length
             self.Velocity += steer
-        
+        return steer       
         # after flight check if Predator is out of range
         # then increase the schooling distance for a few steps
 
-    # to adjust the flight behavior according to the amount of fish nearby
-    # check how many 'Prey' nearby
-    # if amount is bigger than 20
-    # start cycling around the predator        
+        # to adjust the flight behavior according to the amount of fish nearby
+        # check how many 'Prey' nearby
+        # if amount is bigger than 20
+        # start cycling around the predator     
+           
     def Encircle(self):
-        
+        # not implemented
         minSchoolSize = 20
-        
+        pass
 
     def School(self):
-        schoolingDistance = 5.0
+        schoolingDistance = 1
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -165,6 +189,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                     sum += towards
                     count += 1
         
+        steer = rg.Vector3d.Zero
         if count > 0:
             sum /= count
             sum.Unitize()
@@ -173,10 +198,10 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce / steer.Length
             self.Velocity += steer        
-
+        return steer
 
     def Separate(self):
-        desiredSeparation = 0.15
+        desiredSeparation = 1
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -188,17 +213,26 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                 sum += away
                 count += 1
         
+        steer = rg.Vector3d.Zero
         if count > 0:
             sum /= count
             sum.Unitize()
             sum *= self.Maxspeed
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
-                 steer *= self.Maxforce / steer.Length
-            self.Velocity += steer
+                steer *= self.Maxforce / steer.Length
+        return steer
                     
     def Wander(self):
-        self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
+        wander = rg.Vector3d(self.Velocity)
+        wander.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
+        
+        wander.Unitize()
+        wander *= self.Maxspeed
+        steer = wander - self.Velocity
+        if steer.Length > self.Maxforce:
+            steer *= self.Maxforce/steer.Length
+        return steer
     
     # currently not used    
     # def Attract(self):        
@@ -210,10 +244,21 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
-        super(Predator, self).__init__() # super to be able to overwrite parent
+        super(Predator, self).__init__()
+        # set limits for movement
         self.Maxspeed = 0.025
         self.Attackspeed = 4 * self.Maxspeed
         self.Maxforce = 0.2
+        
+        # set weights of behaviors
+        self.wWander = 1.0
+        self.wSchool = 1.0
+        self.wAlign = 1.0
+        self.wSeperate = 1.0
+        self.wFlight = 1.0
+        self.wContain = 1.0        
+        
+        # initialize velocity
         alpha = random.uniform(0, 6.28)
         self.Velocity = 0.1 * rg.Vector3d(math.cos(alpha), math.sin(alpha), -math.cos(alpha))
     
@@ -286,7 +331,7 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
 boundarySize = 10.0
 
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 200
+    preyCount = 150
     predatorCount = 1
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
