@@ -117,12 +117,12 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             self.Velocity += steer
 
     def Flight(self):
-        desiredSeparation = 1.0
+        desiredSeparation = 2.0
         sum = rg.Vector3d.Zero
         count = 0
-        for other in self.ParticleSystem.Particles:
+        for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == 'Predator':
-                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor > 0 and distance_to_neighbor < desiredSeparation:
                     away = self.Position - other.Position
                     away.Unitize()
@@ -142,9 +142,9 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
         schoolingDistance = 5.0
         sum = rg.Vector3d.Zero
         count = 0
-        for other in self.ParticleSystem.Particles:
+        for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == type(self).__name__:
-                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor > 0 and distance_to_neighbor < schoolingDistance:
                     towards = other.Position - self.Position 
                     towards.Unitize()
@@ -162,11 +162,11 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             self.Velocity += steer        
 
     def Separate(self):
-        desiredSeparation = 0.15
+        desiredSeparation = 0.5
         sum = rg.Vector3d.Zero
         count = 0
-        for other in self.ParticleSystem.Particles:
-            distance_to_neighbor = self.Position.DistanceTo(other.Position)
+        for i, other in enumerate(self.ParticleSystem.Particles):
+            distance_to_neighbor = self.Distances[i]
             if distance_to_neighbor > 0 and distance_to_neighbor < desiredSeparation:
                 away = self.Position - other.Position
                 away.Unitize()
@@ -186,13 +186,6 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
     
-    # currently not used    
-    # def Attract(self):        
-    #     toAttractor = iAttractor - self.Position
-    #     toAttractor *= 0.01 / toAttractor.Length
-    #     self.Velocity += toAttractor
-    #     self.Velocity *= 0.1 / self.Velocity.Length
-    
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
@@ -205,13 +198,11 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
     
     def Calculate(self):        
         self.Wander()
-        #self.Align()
-        #self.Separate()
         self.Attack()
         self.Containment()
 
     def Update(self):
-        self.Kill() # makes sure that agents are only removed after all calculations finished
+        # self.Kill() # makes sure that agents are only removed after all calculations finished
         
         self.Position += self.Velocity
         self.History.append(self.Position)
@@ -226,9 +217,9 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
         attackDistance = 1.5
         sum = rg.Vector3d.Zero
         count = 0
-        for other in self.ParticleSystem.Particles:
+        for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_
-                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
                     towards = other.Position - self.Position
                     towards.Unitize()
@@ -252,9 +243,9 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
         neighborDistance = 0.5
         killProbability = 0.25
         survivors = []
-        for other in self.ParticleSystem.Particles:
+        for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_⩹)
-                distance_to_neighbor = self.Position.DistanceTo(other.Position)
+                distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor < neighborDistance and killProbability > random.uniform(0.0, 1.0):
                     pass
                 else:
@@ -265,8 +256,8 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
        
 # Main Script:
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 100
-    predatorCount = 1
+    preyCount = 200
+    predatorCount = 5
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
@@ -281,5 +272,5 @@ for particle in myParticleSystem.Particles:
 boundingBox = rg.Box(rg.Plane.WorldXY, rg.Interval(0.0, boundarySize),\
     rg.Interval(0.0, boundarySize), rg.Interval(0.0, boundarySize)).ToBrep()
 paths += [edge.EdgeCurve for edge in boundingBox.Edges]
-oGeometry = paths
-oGeometry2 = paths2
+oPreyPath = paths
+oPredatorPath = paths2
