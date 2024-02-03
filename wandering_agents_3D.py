@@ -8,7 +8,6 @@ class ParticleSystem:
     
     def __init__(self, preyPopulation, predatorPopulation):
         self.Particles = []
-        self.Attractor = rg.Point3d.Origin
         # populate with prey
         for i in range(0, preyPopulation):
             newParticle = Prey()
@@ -41,13 +40,10 @@ class ParticleSystem:
 class Fish(object):
     
     def __init__(self):
-        self.Position = rg.Point3d(random.uniform(0, boundarySize),\
-                    random.uniform(0, boundarySize), random.uniform(0, boundarySize))
         self.Distances = []
         self.Maxspeed = 0
         self.Maxforce = 0
         self.Velocity = rg.Vector3d(0,0,0)
-        self.History = [self.Position]
     
     def Calculate(self):
         pass
@@ -62,10 +58,10 @@ class Fish(object):
     def Containment(self):
         if self.Position.X < 0.0:
             self.Position.X = 0
-            self.Velocity.X = -self.Velocity.X
+            self.Velocity.X = -self.Velocity.X/2
         elif self.Position.X > boundarySize:
             self.Position.X = boundarySize
-            self.Velocity.X = -self.Velocity.X
+            self.Velocity.X = -self.Velocity.X/2
             
         if self.Position.Y < 0.0:
             self.Position.Y = 0
@@ -76,15 +72,20 @@ class Fish(object):
             
         if self.Position.Z < 0.0:
             self.Position.Z = 0
-            self.Velocity.Z = -self.Velocity.Z
+            self.Velocity.Z = -self.Velocity.Z/2
         elif self.Position.Z > boundarySize:
             self.Position.Z = boundarySize
-            self.Velocity.Z = -self.Velocity.Z
+            self.Velocity.Z = -self.Velocity.Z/2
              
 class Prey(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
             super(Prey, self).__init__() # super to be able to overwrite parent
+            
+            #History & position in prey to guide zone for fishes start position
+            self.Position = rg.Point3d(random.uniform(0, boundarySize),\
+                    random.uniform(0, boundarySize ), random.uniform(0, boundarySize/2))
+            self.History = [self.Position]
             
             # movement limits
             self.Maxspeed = 0.05
@@ -92,10 +93,11 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             self.Maxforce = 0.2
             
             # behavior weights
-            self.wWander = 5.0
+            self.wWander = 1.0
             self.wSchool = 1.0
-            self.wAlign = 0.98
-            self.wSeparate = 2.0
+            self.wAlign = 1.0
+            self.wSeparate = 0.75 
+            #depends on predator-prey interaction
             self.wFlight = 1.0
             
             # initial velocity
@@ -108,11 +110,10 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
         self.Align(self.wAlign)
         self.Separate(self.wSeparate)
         self.Flight(self.wFlight)
-        self.Attract(0.005)
         self.Containment()
                  
     def Align(self, weight):
-        neighborDistance = 1
+        neighborDistance = 2
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -130,6 +131,20 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                  steer *= self.Maxforce
             self.Velocity += (weight * steer)
             
+            
+    def Attract(self, weight):
+        min_distance = 10.0
+        distance_to_attractor = self.Position.DistanceTo(self.ParticleSystem.Attractor)
+        if distance_to_attractor > min_distance:
+            towards = self.ParticleSystem.Attractor - self.Position
+            towards.Unitize()
+            towards *= (distance_to_attractor - min_distance)
+            steer = towards - self.Velocity
+            if steer.Length > self.Maxforce:
+                 steer *= (self.Maxforce / steer.Length)
+            self.Velocity += (weight * steer)
+
+
     def Attract(self, weight):
         min_distance = 10.0
         distance_to_attractor = self.Position.DistanceTo(self.ParticleSystem.Attractor)
@@ -143,7 +158,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             self.Velocity += (weight * steer)
 
     def Flight(self, weight):
-        desiredSeparation = 5.0
+        desiredSeparation = 2.0
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -152,28 +167,36 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                 if distance_to_neighbor > 0 and distance_to_neighbor < desiredSeparation:
                     away = self.Position - other.Position
                     away.Unitize()
-                    away /= distance_to_neighbor ** 2
+                    away /= distance_to_neighbor
                     sum += away
                     count += 1
         
         if count > 0:
             sum /= count
+            sum *= self.Flightspeed
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
                  steer *= self.Maxforce / steer.Length
             self.Velocity += (weight * steer)
+            
+    
+    # might be implemented in the future       
+    #def Encircle(self):
+    #    
+    #    minSchoolSize = 20
+        
 
     def School(self, weight):
-        schoolingDistance = 15.0
+        schoolingDistance = 10.0
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
-            if type(other).__name__ == 'Prey':
+            if type(other).__name__ == type(self).__name__:
                 distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor > 0 and distance_to_neighbor < schoolingDistance:
                     towards = other.Position - self.Position 
                     towards.Unitize()
-                    towards *= (distance_to_neighbor / boundarySize)
+                    towards /= distance_to_neighbor
                     sum += towards
                     count += 1
         
@@ -211,20 +234,27 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
                     
     def Wander(self, weight):
         self.Velocity.Rotate(weight * random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
+
     
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
         super(Predator, self).__init__() # super to be able to overwrite parent
         
+        #History & position in prey to guide zone for predator start position
+        self.Position = rg.Point3d(random.uniform(0, boundarySize/2),\
+                    random.uniform(0, boundarySize), random.uniform(0, boundarySize))
+        self.History = [self.Position]
+        
         # movement limits
         self.Maxspeed = 0.025
         self.Attackspeed = 4 * self.Maxspeed
-        self.Maxforce = 0.4
+        self.Maxforce = 0.2
         
         # behavior weights
         self.wWander = 1.0
-        self.wPursue = 1.0
+        self.wAttack = 1.0
+        self.wKill = 1.0
         
         # initial velocity
         alpha = random.uniform(0, 6.28)
@@ -232,11 +262,12 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
     
     def Calculate(self):        
         self.Wander(self.wWander)
-        self.Pursue(self.wPursue)
+        #self.Attack(self.wAttack)
+        self.Pursue(self.wAttack)
         self.Containment()
 
     def Update(self):
-        self.Kill() # makes sure that agents are only removed after all calculations finished
+        self.Kill(self.wKill) # makes sure that agents are only removed after all calculations finished
         
         self.Position += self.Velocity
         self.History.append(self.Position)
@@ -244,23 +275,46 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
         if len(self.History) > 30:
             del self.History[0]  
 
+    def Wander(self, weight):
+        self.Velocity.Rotate(weight * random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
+        
+    #def Attack(self, weight):
+        #attackDistance = 1.5
+        #sum = rg.Vector3d.Zero
+        #count = 0
+        #for i, other in enumerate(self.ParticleSystem.Particles):
+        #    if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_
+         #       distance_to_neighbor = self.Distances[i]
+           #      if distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
+           #      if distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
+            #          towards.Unitize()
+               #       towards /= distance_to_neighbor
+                  #    sum += towards
+                    #  count += 1
+        
+        #  if count > 0:
+        #      sum /= count
+        #      sum.Unitize()
+        #      sum *= self.Attackspeed
+        #      steer = sum - self.Velocity
+        #      if steer.Length > self.Maxforce:
+        #           steer *= self.Maxforce / steer.Length
+        #      self.Velocity += (weight * steer)
+        
     def Pursue(self, weight):
-        pursueDistance = 5.0
-        attackDistance = 0.75
+        attackDistance = 1.5
         sum = rg.Vector3d.Zero
         count = 0
+        futuretimestep=1
         for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_
                 distance_to_neighbor = self.Distances[i]
-                if distance_to_neighbor >= attackDistance and distance_to_neighbor < pursueDistance:
-                    towards = other.Position - self.Position
-                    towards.Unitize()
-                    towards /= distance_to_neighbor
-                    sum += towards
-                    count += 1                   
-                
-                elif distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
-                    towards = (other.Position + other.Velocity) - self.Position
+                if distance_to_neighbor > 0 and distance_to_neighbor < attackDistance:
+                    
+                    #Calculate Future position of the prey
+                    futurePosition = rg.Point3d(other.Position.X + other.Velocity.X * futuretimestep, other.Position.Y + other.Velocity.Y * futuretimestep,other.Position.Z + other.Velocity.Z * futuretimestep)
+                    
+                    towards = futurePosition - self.Position
                     towards.Unitize()
                     towards /= distance_to_neighbor
                     sum += towards
@@ -269,30 +323,26 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
         if count > 0:
             sum /= count
             sum.Unitize()
+            sum *= self.Attackspeed
             steer = sum - self.Velocity
             if steer.Length > self.Maxforce:
-                 steer *= (self.Maxforce / steer.Length)
+                 steer *= self.Maxforce / steer.Length
             self.Velocity += (weight * steer)
-
-    def Kill(self):
-        neighborDistance = 0.1
+            
+    def Kill(self,weight):
+        neighborDistance = 0.5
         killProbability = 0.25
         survivors = []
         for i, other in enumerate(self.ParticleSystem.Particles):
             if type(other).__name__ == 'Prey':  # for whatever f***ing reason isinstance() doesn't work (⩺_⩹)
                 distance_to_neighbor = self.Distances[i]
                 if distance_to_neighbor < neighborDistance and killProbability > random.uniform(0.0, 1.0):
-                    newParticle = Prey()
-                    newParticle.ParticleSystem = self.ParticleSystem
-                    survivors.append(newParticle)
+                    pass
                 else:
                     survivors.append(other)
             else:
                 survivors.append(other)
         self.ParticleSystem.Particles = survivors
-
-    def Wander(self, weight):
-        self.Velocity.Rotate(weight * random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
  
 
 # -------------------------------------------------------------------------------------------------------------------------
@@ -300,14 +350,12 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
 # MAIN SCRIPT:
 
 # set size of boundary box
-boundarySize = 30.0
-attractorPt = rg.Point3d(boundarySize/2.0, boundarySize/2.0, boundarySize/2.0)
+boundarySize = 10.0
 
 if iReset or not("myParticleSystem" in globals()):
-    preyCount = 200
-    predatorCount = 1
+    preyCount = 100
+    predatorCount = 5
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
-    myParticleSystem.Attractor = attractorPt
 else:
     myParticleSystem.Update()
     
