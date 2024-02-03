@@ -118,7 +118,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
             self.Velocity += steer
 
     def Flight(self):
-        desiredSeparation = 1.0
+        desiredSeparation = 2.0
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -176,7 +176,7 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
 
 
     def Separate(self):
-        desiredSeparation = 0.15
+        desiredSeparation = 0.5
         sum = rg.Vector3d.Zero
         count = 0
         for i, other in enumerate(self.ParticleSystem.Particles):
@@ -200,13 +200,6 @@ class Prey(Fish):  # inherits from object, so class type of instances can be che
     def Wander(self):
         self.Velocity.Rotate(random.uniform(-0.2, 0.2), rg.Vector3d.ZAxis)
     
-    # currently not used    
-    # def Attract(self):        
-    #     toAttractor = iAttractor - self.Position
-    #     toAttractor *= 0.01 / toAttractor.Length
-    #     self.Velocity += toAttractor
-    #     self.Velocity *= 0.1 / self.Velocity.Length
-    
 class Predator(Fish):  # inherits from object, so class type of instances can be checked in Ironpython 2.7
 
     def __init__(self):
@@ -219,13 +212,11 @@ class Predator(Fish):  # inherits from object, so class type of instances can be
     
     def Calculate(self):        
         self.Wander()
-        #self.Align()
-        #self.Separate()
         self.Attack()
         self.Containment()
 
     def Update(self):
-        self.Kill() # makes sure that agents are only removed after all calculations finished
+        # self.Kill() # makes sure that agents are only removed after all calculations finished
         
         self.Position += self.Velocity
         self.History.append(self.Position)
@@ -287,7 +278,7 @@ boundarySize = 10.0
 
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 200
-    predatorCount = 4
+    predatorCount = 5
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
