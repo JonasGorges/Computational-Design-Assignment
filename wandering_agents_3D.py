@@ -287,7 +287,7 @@ boundarySize = 10.0
 
 if iReset or not("myParticleSystem" in globals()):
     preyCount = 200
-    predatorCount = 1
+    predatorCount = 4
     myParticleSystem = ParticleSystem(preyCount, predatorCount)
 else:
     myParticleSystem.Update()
