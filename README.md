@@ -1,14 +1,14 @@
 # Dance of the Spiraling Shoal
 
-**Computational Design Techniques and Design Thinking**
-ICD Seminar Winter 2023-24 Final Assignment
-ITECH - University of Stuttgart
-
-**Group:**
-Likhinya Kvs
-Shaqayeq Tahavvori
-Jonas Gorges
-Jonas Mertens
+**Computational Design Techniques and Design Thinking** <br>
+ICD Seminar Winter 2023-24 Final Assignment<br>
+ITECH - University of Stuttgart<br>
+<br>
+**Group:**<br>
+Likhinya Kvs<br>
+Shaqayeq Tahavvori<br>
+Jonas Gorges<br>
+Jonas Mertens<br>
 
 ## Methods & Development
 
