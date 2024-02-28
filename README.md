@@ -1,8 +1,9 @@
 # Dance of the Spiraling Shoal
 
 **Computational Design Techniques and Design Thinking** <br>
-ICD Seminar Winter 2023-24 Final Assignment<br>
-ITECH - University of Stuttgart<br>
+<br>
+ICD Seminar Winter 2023-24 Final Assignment <br>
+ITECH - University of Stuttgart <br>
 <br>
 **Group:**<br>
 Likhinya Kvs<br>
