@@ -1,5 +1,13 @@
-# Computational Design Assignment
- ITECH - Final Assignment in Computational Design Class
+# Dance of the Spiraling Shoal
+Computational Design Techniques and Design Thinking
+ICD Seminar Winter 2023-24 Final Assignment
+ITECH - University of Stuttgart
+
+Developed by:
+Likhinya Kvs
+Shaqayeq Tahavvori
+Jonas Gorges
+Jonas Mertens
 
 ## Methods & Development
 
