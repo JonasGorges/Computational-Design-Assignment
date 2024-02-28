@@ -29,15 +29,21 @@ Our subsequent goal was to present the developed geometry in a novel way, illust
 ## References
 [1]	Vetemaa, E. M. (2020). Simulating the Collective Movement of Fish Schools. 
 	University of Tartu, Institute of Computer Science.
+ 
 [2]	Di Santo, V. (2023). Schooling in fishes. Reference Module in Life 
 	Sciences. Elsevier.
+ 
 [3]	Jeon, W., Kang, S.-H., Leem, J.-B., & Lee, S.-H. (2013). Characterization of fish 
 	schooling behavior with different numbers of Medaka (Oryzias latipes) and goldfish 
 	(Carassius auratus) using a Hidden Markov Model. Physica A: Statistical Mechanics 
 	and its Applications, 392(10), 2426-2433.
+ 
 [4]	Hartono, A. D., Nguyen, L. T. H., & Tạ, T. V. (2024). A stochastic differential equation 
 	model for predator-avoidance fish schooling. Mathematical Biosciences, 367.
+ 
 [5]	Takagi, T., Nashimoto, K., Yamamoto, K., & Hiraishi, T. (1993). Bull. Japan. Soc. Sci. 
 	Fish, 59, 1279.
+ 
 [6]	Huth, A., & Wissel, C. (1994). Ecol. Model., 75, 135.
+
 [7]	Niwa, H.-S. (1994). J. Theoret. Biol., 171, 123
